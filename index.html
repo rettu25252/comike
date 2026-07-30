@@ -26,26 +26,26 @@
           </div>
 
           <div id="createRoomPanel">
-            <p class="hint-text">新しい部屋を作成します。作った人が管理者になります。</p>
+            <p class="hint-text">部屋の作成または管理者としてログインします。</p>
             <form id="createRoomForm" class="stacked-form">
               <label>
-                パスワード
-                <input id="createPwInput" type="password" required />
+                部屋のPW（視聴者用）
+                <input id="createPwInput" type="text" autocomplete="off" required />
               </label>
               <label>
-                パスワード（確認）
-                <input id="createPwConfirmInput" type="password" required />
+                管理者PW
+                <input id="createAdminPwInput" type="text" autocomplete="off" required />
               </label>
-              <button type="submit" class="primary-button">部屋を作る</button>
+              <button type="submit" class="primary-button">作成 / 管理者として入る</button>
             </form>
           </div>
 
           <div id="enterRoomPanel" style="display:none">
-            <p class="hint-text">既に作成済みの部屋に入ります。銅覧のみできます。</p>
+            <p class="hint-text">部屋のPWで入室します。閲覧のみできます。</p>
             <form id="enterRoomForm" class="stacked-form">
               <label>
-                パスワード
-                <input id="enterPwInput" type="password" required />
+                部屋のPW
+                <input id="enterPwInput" type="text" autocomplete="off" required />
               </label>
               <button type="submit" class="primary-button">入る</button>
             </form>

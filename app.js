@@ -2,6 +2,7 @@ const STORAGE_KEY = "shopping-list-app-v1";
 
 const defaultState = {
   password: null,
+  adminPassword: null,
   sessionRole: "owner",
   editableListIds: [],
   undoState: null,
@@ -794,13 +795,26 @@ document.getElementById("tabEnterRoom").addEventListener("click", () => setPassw
 
 document.getElementById("createRoomForm").addEventListener("submit", (event) => {
   event.preventDefault();
-  const pw = document.getElementById("createPwInput").value;
-  const confirm = document.getElementById("createPwConfirmInput").value;
-  if (!pw || pw !== confirm) {
-    alert("パスワードが一致しません。");
+  const roomPw = document.getElementById("createPwInput").value;
+  const adminPw = document.getElementById("createAdminPwInput").value;
+  if (!roomPw || !adminPw) {
+    alert("部屋のPWと管理者PWの両方を入力してください。");
     return;
   }
-  state.password = pw;
+  // if room exists and admin PW matches, log in as admin without resetting
+  if (state.adminPassword && adminPw === state.adminPassword) {
+    state.sessionRole = "owner";
+    saveState();
+    navigateTo("lists");
+    return;
+  }
+  // create new room (or re-create if admin PW didn't match an existing room)
+  if (state.adminPassword && adminPw !== state.adminPassword) {
+    alert("管理者PWが違います。");
+    return;
+  }
+  state.password = roomPw;
+  state.adminPassword = adminPw;
   state.sessionRole = "owner";
   saveState();
   navigateTo("lists");
