@@ -570,8 +570,8 @@ function renderListsView() {
     card.className = "list-card";
     card.dataset.listId = list.id;
     card.innerHTML = `
-      <h3>${list.name}</h3>
-      <p class="hint-text">${list.items.length}件のアイテム</p>
+      <h3>${escapeHtml(list.name)}</h3>
+      <p class="hint-text">${escapeHtml(String(list.items.length))}件のアイテム</p>
     `;
     container.appendChild(card);
   });
@@ -639,13 +639,13 @@ function renderListView() {
     row.className = `item-row ${status === "done" ? "purchased" : ""} ${getPriorityClass(item.priority)}`.trim();
     row.innerHTML = `
       <div class="status-row">
-        <strong>${item.name}</strong>
-        <button type="button" class="status-toggle ${getPurchaseClass(status)}" data-action="toggle-status" data-item-id="${item.id}">${getPurchaseLabel(status)}</button>
+        <strong>${escapeHtml(item.name)}</strong>
+        <button type="button" class="status-toggle ${getPurchaseClass(status)}" data-action="toggle-status" data-item-id="${escapeHtml(item.id)}">${getPurchaseLabel(status)}</button>
       </div>
-      <div class="meta">場所: ${item.location || "未設定"}</div>
-      <div class="meta">位置: ${item.position || "未設定"}</div>
-      <div class="meta">価格: ${item.price || "未設定"}</div>
-      <div class="meta">メモ: ${item.memo || "なし"}</div>
+      <div class="meta">場所: ${escapeHtml(item.location || "未設定")}</div>
+      <div class="meta">位置: ${escapeHtml(item.position || "未設定")}</div>
+      <div class="meta">価格: ${escapeHtml(item.price || "未設定")}</div>
+      <div class="meta">メモ: ${escapeHtml(item.memo || "なし")}</div>
     `;
     itemsList.appendChild(row);
   });

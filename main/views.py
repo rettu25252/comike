@@ -68,6 +68,8 @@ def api_state(request):
         return response
 
     if request.method == "PUT":
+        if len(request.body) > 1_000_000:  # 1 MB limit
+            return JsonResponse({"error": "payload too large"}, status=413)
         try:
             payload = json.loads(request.body.decode("utf-8"))
         except json.JSONDecodeError:
@@ -97,6 +99,10 @@ def api_state(request):
 
 
 def serve_asset(request, filename):
+    # restrict to known static files only to prevent path traversal
+    allowed = {"styles.css", "app.js"}
+    if filename not in allowed:
+        raise Http404(f"{filename} not found")
     asset_path = ROOT / filename
     if not asset_path.exists() or not asset_path.is_file():
         raise Http404(f"{filename} not found")
