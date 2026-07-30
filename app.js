@@ -269,6 +269,8 @@ function saveStateToLocal() {
 }
 
 async function loadStateFromServer() {
+  // sessionRole is client-only; preserve it across server syncs
+  const currentRole = state.sessionRole;
   try {
     const response = await fetch(buildApiUrl("/api/state"));
     if (!response.ok) {
@@ -278,6 +280,7 @@ async function loadStateFromServer() {
     const payload = await response.json();
     if (payload?.state) {
       state = normalizeState(payload.state);
+      state.sessionRole = currentRole;
       state.serverVersion = Number(payload.version || 0);
       saveStateToLocal();
       return true;
