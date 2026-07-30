@@ -316,7 +316,15 @@ async function syncStateToServer() {
       if (response.status === 409) {
         const payload = await response.json();
         if (payload?.state) {
+          const savedRole = state.sessionRole;
+          const savedView = state.view;
+          const savedListId = state.currentListId;
+          const savedFilters = state.filters;
           state = normalizeState(payload.state);
+          state.sessionRole = savedRole;
+          state.view = savedView;
+          state.currentListId = savedListId;
+          state.filters = savedFilters;
           state.serverVersion = Number(payload.version || 0);
           saveStateToLocal();
           render();
