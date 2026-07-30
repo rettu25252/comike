@@ -3,7 +3,6 @@ const STORAGE_KEY = "shopping-list-app-v1";
 const defaultState = {
   password: null,
   adminPassword: null,
-  sessionRole: "owner",
   editableListIds: [],
   undoState: null,
   serverVersion: 0,
@@ -23,6 +22,8 @@ const defaultState = {
 
 const PURCHASE_STATUSES = ["done", "todo", "partial"];
 
+// sessionRole lives outside state so state replacements never reset it
+let sessionRole = null;
 let state = loadStateFromLocal();
 let syncInFlight = false;
 
@@ -48,6 +49,7 @@ function normalizeState(rawState) {
   return {
     ...structuredClone(defaultState),
     ...source,
+    sessionRole: undefined,
     serverVersion: Number(source.serverVersion || 0),
     undoState: source.undoState || null,
     history: {
@@ -270,8 +272,7 @@ function saveStateToLocal() {
 }
 
 async function loadStateFromServer() {
-  // preserve all client-only session state across server syncs
-  const currentRole = state.sessionRole;
+  // view/currentListId/filters are also client-only; preserve them too
   const currentView = state.view;
   const currentListId = state.currentListId;
   const currentFilters = state.filters;
@@ -284,7 +285,6 @@ async function loadStateFromServer() {
     const payload = await response.json();
     if (payload?.state) {
       state = normalizeState(payload.state);
-      state.sessionRole = currentRole;
       state.view = currentView;
       state.currentListId = currentListId;
       state.filters = currentFilters;
@@ -309,19 +309,17 @@ async function syncStateToServer() {
     const response = await fetch(buildApiUrl("/api/state"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: { ...state, sessionRole: null, adminPassword: state.adminPassword, view: null, currentListId: null, filters: null }, version: state.serverVersion || 0 })
+      body: JSON.stringify({ state: { ...state, sessionRole: undefined, view: null, currentListId: null, filters: null }, version: state.serverVersion || 0 })
     });
 
     if (!response.ok) {
       if (response.status === 409) {
         const payload = await response.json();
         if (payload?.state) {
-          const savedRole = state.sessionRole;
           const savedView = state.view;
           const savedListId = state.currentListId;
           const savedFilters = state.filters;
           state = normalizeState(payload.state);
-          state.sessionRole = savedRole;
           state.view = savedView;
           state.currentListId = savedListId;
           state.filters = savedFilters;
@@ -351,7 +349,7 @@ function saveState() {
 }
 
 function canCreateLists() {
-  return state.sessionRole === "owner";
+  return sessionRole === "owner";
 }
 
 function canEditList(list) {
@@ -359,7 +357,7 @@ function canEditList(list) {
     return false;
   }
 
-  return state.sessionRole === "owner" || (Array.isArray(state.editableListIds) && state.editableListIds.includes(list.id));
+  return sessionRole === "owner" || (Array.isArray(state.editableListIds) && state.editableListIds.includes(list.id));
 }
 
 function grantEditAccess(listId) {
@@ -551,7 +549,7 @@ function renderListsView() {
   const deleteRoomBtn = document.getElementById("deleteRoomBtn");
   container.innerHTML = "";
 
-  const isOwner = state.sessionRole === "owner";
+  const isOwner = sessionRole === "owner";
   if (createButton) {
     createButton.style.display = canCreateLists() ? "inline-block" : "none";
   }
@@ -730,7 +728,7 @@ function updateUndoButton() {
 
 function render() {
   // force password screen when not authenticated
-  if (!state.sessionRole) {
+  if (!sessionRole) {
     state.view = "password";
   }
   updateHeader();
@@ -754,7 +752,6 @@ function createList(name) {
     items: []
   };
   state.lists.unshift(list);
-  state.sessionRole = "owner";
   grantEditAccess(list.id);
   saveState();
   navigateTo("edit", list.id);
@@ -817,7 +814,7 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
   }
   // if room exists and admin PW matches, log in as admin without resetting
   if (state.adminPassword && adminPw === state.adminPassword) {
-    state.sessionRole = "owner";
+    sessionRole = "owner";
     saveState();
     navigateTo("lists");
     return;
@@ -829,7 +826,7 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
   }
   state.password = roomPw;
   state.adminPassword = adminPw;
-  state.sessionRole = "owner";
+  sessionRole = "owner";
   saveState();
   navigateTo("lists");
 });
@@ -842,7 +839,7 @@ document.getElementById("enterRoomForm").addEventListener("submit", (event) => {
     return;
   }
   if (pw === state.password) {
-    state.sessionRole = "viewer";
+    sessionRole = "viewer";
     saveState();
     navigateTo("lists");
   } else {
@@ -1233,11 +1230,11 @@ document.getElementById("confirmChangePwBtn").addEventListener("click", handleCh
 
 async function initializeApp() {
   state = loadStateFromLocal();
-  // sessionRole is never persisted; always require password on page load
-  state.sessionRole = null;
+  // sessionRole is a module-level variable; always start unauthenticated
+  sessionRole = null;
   render();
   await loadStateFromServer();
-  state.sessionRole = null;
+  sessionRole = null;
   render();
   updateUrl(true);
   window.setInterval(() => {
