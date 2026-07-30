@@ -299,7 +299,7 @@ async function syncStateToServer() {
     const response = await fetch(buildApiUrl("/api/state"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state, version: state.serverVersion || 0 })
+      body: JSON.stringify({ state: { ...state, sessionRole: null, view: "password" }, version: state.serverVersion || 0 })
     });
 
     if (!response.ok) {
@@ -1150,9 +1150,14 @@ window.addEventListener("hashchange", handleHashChange);
 
 async function initializeApp() {
   state = loadStateFromLocal();
+  // always start on password screen; session role is not persisted
+  state.sessionRole = null;
+  state.view = "password";
   applyRoute(getRouteFromHash());
   render();
   await loadStateFromServer();
+  state.sessionRole = null;
+  state.view = "password";
   applyRoute(getRouteFromHash());
   render();
   updateUrl(true);
