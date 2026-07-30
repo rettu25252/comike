@@ -526,22 +526,7 @@ function updateHeader() {
 }
 
 function renderPasswordView() {
-  const heading = document.getElementById("passwordHeading");
-  const hint = document.getElementById("passwordHint");
-  const confirmWrap = document.getElementById("confirmPasswordWrap");
-  const submitButton = document.querySelector("#passwordForm button");
-
-  if (!state.password) {
-    heading.textContent = "パスワードを設定してください";
-    hint.textContent = "初回は新しいパスワードを設定します。";
-    confirmWrap.style.display = "grid";
-    submitButton.textContent = "設定する";
-  } else {
-    heading.textContent = "パスワードを入力してください";
-    hint.textContent = "登録済みのパスワードを入力してください。";
-    confirmWrap.style.display = "none";
-    submitButton.textContent = "ログイン";
-  }
+  // tab UI is managed by setPasswordTab; nothing dynamic needed here
 }
 
 function renderListsView() {
@@ -797,29 +782,43 @@ function addItem(name, price, memo, location = "", position = "", priority = "")
   render();
 }
 
-document.getElementById("passwordForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  const passwordInput = document.getElementById("passwordInput");
-  const confirmPasswordInput = document.getElementById("confirmPasswordInput");
+function setPasswordTab(tab) {
+  document.getElementById("createRoomPanel").style.display = tab === "create" ? "block" : "none";
+  document.getElementById("enterRoomPanel").style.display = tab === "enter" ? "block" : "none";
+  document.getElementById("tabCreateRoom").classList.toggle("active", tab === "create");
+  document.getElementById("tabEnterRoom").classList.toggle("active", tab === "enter");
+}
 
-  if (!state.password) {
-    if (!passwordInput.value || passwordInput.value !== confirmPasswordInput.value) {
-      alert("パスワードが一致しません。" );
-      return;
-    }
-    state.password = passwordInput.value;
-    state.sessionRole = "owner";
-    saveState();
-    navigateTo("lists");
+document.getElementById("tabCreateRoom").addEventListener("click", () => setPasswordTab("create"));
+document.getElementById("tabEnterRoom").addEventListener("click", () => setPasswordTab("enter"));
+
+document.getElementById("createRoomForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const pw = document.getElementById("createPwInput").value;
+  const confirm = document.getElementById("createPwConfirmInput").value;
+  if (!pw || pw !== confirm) {
+    alert("パスワードが一致しません。");
     return;
   }
+  state.password = pw;
+  state.sessionRole = "owner";
+  saveState();
+  navigateTo("lists");
+});
 
-  if (passwordInput.value === state.password) {
-    state.sessionRole = "owner";
+document.getElementById("enterRoomForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const pw = document.getElementById("enterPwInput").value;
+  if (!state.password) {
+    alert("まだ部屋が作られていません。「部屋を作る」から部屋を作成してください。");
+    return;
+  }
+  if (pw === state.password) {
+    state.sessionRole = "viewer";
     saveState();
     navigateTo("lists");
   } else {
-    alert("パスワードが違います。" );
+    alert("パスワードが違います。");
   }
 });
 

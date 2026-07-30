@@ -133,6 +133,29 @@ select {
   min-height: 44px;
 }
 
+.pw-tab-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.pw-tab {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid var(--accent-soft);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.pw-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 #logoutBtn,
 #backToListsBtn {
   min-height: 36px;

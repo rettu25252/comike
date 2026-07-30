@@ -19,19 +19,37 @@
 
       <section id="passwordView" class="view active">
         <div class="card">
-          <h2 id="passwordHeading">パスワードを設定してください</h2>
-          <p id="passwordHint" class="hint-text">初回は新しいパスワードを設定します。</p>
-          <form id="passwordForm" class="stacked-form">
-            <label>
-              パスワード
-              <input id="passwordInput" type="password" required />
-            </label>
-            <label id="confirmPasswordWrap">
-              パスワード確認
-              <input id="confirmPasswordInput" type="password" />
-            </label>
-            <button type="submit" class="primary-button">続ける</button>
-          </form>
+          <h2>買い物リスト</h2>
+          <div class="pw-tab-group">
+            <button type="button" id="tabCreateRoom" class="pw-tab active">部屋を作る</button>
+            <button type="button" id="tabEnterRoom" class="pw-tab">部屋に入る</button>
+          </div>
+
+          <div id="createRoomPanel">
+            <p class="hint-text">新しい部屋を作成します。作った人が管理者になります。</p>
+            <form id="createRoomForm" class="stacked-form">
+              <label>
+                パスワード
+                <input id="createPwInput" type="password" required />
+              </label>
+              <label>
+                パスワード（確認）
+                <input id="createPwConfirmInput" type="password" required />
+              </label>
+              <button type="submit" class="primary-button">部屋を作る</button>
+            </form>
+          </div>
+
+          <div id="enterRoomPanel" style="display:none">
+            <p class="hint-text">既に作成済みの部屋に入ります。銅覧のみできます。</p>
+            <form id="enterRoomForm" class="stacked-form">
+              <label>
+                パスワード
+                <input id="enterPwInput" type="password" required />
+              </label>
+              <button type="submit" class="primary-button">入る</button>
+            </form>
+          </div>
         </div>
       </section>
 
