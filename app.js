@@ -270,8 +270,11 @@ function saveStateToLocal() {
 }
 
 async function loadStateFromServer() {
-  // sessionRole is client-only; preserve it across server syncs
+  // preserve all client-only session state across server syncs
   const currentRole = state.sessionRole;
+  const currentView = state.view;
+  const currentListId = state.currentListId;
+  const currentFilters = state.filters;
   try {
     const response = await fetch(buildApiUrl("/api/state"));
     if (!response.ok) {
@@ -282,6 +285,9 @@ async function loadStateFromServer() {
     if (payload?.state) {
       state = normalizeState(payload.state);
       state.sessionRole = currentRole;
+      state.view = currentView;
+      state.currentListId = currentListId;
+      state.filters = currentFilters;
       state.serverVersion = Number(payload.version || 0);
       saveStateToLocal();
       return true;
@@ -303,7 +309,7 @@ async function syncStateToServer() {
     const response = await fetch(buildApiUrl("/api/state"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: { ...state, sessionRole: null, view: "password" }, version: state.serverVersion || 0 })
+      body: JSON.stringify({ state: { ...state, sessionRole: null, adminPassword: state.adminPassword, view: null, currentListId: null, filters: null }, version: state.serverVersion || 0 })
     });
 
     if (!response.ok) {
