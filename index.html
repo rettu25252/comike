@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>買い物リスト</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">家庭用買い物メモ</p>
+          <h1 id="pageTitle">買い物リスト</h1>
+          <p id="pageSubtitle">安全に管理できるショッピングリストです。</p>
+        </div>
+        <button id="logoutBtn" class="ghost-button">ログアウト</button>
+      </header>
+
+      <section id="passwordView" class="view active">
+        <div class="card">
+          <h2 id="passwordHeading">パスワードを設定してください</h2>
+          <p id="passwordHint" class="hint-text">初回は新しいパスワードを設定します。</p>
+          <form id="passwordForm" class="stacked-form">
+            <label>
+              パスワード
+              <input id="passwordInput" type="password" required />
+            </label>
+            <label id="confirmPasswordWrap">
+              パスワード確認
+              <input id="confirmPasswordInput" type="password" />
+            </label>
+            <button type="submit" class="primary-button">続ける</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="listsView" class="view">
+        <div class="card">
+          <div class="section-heading">
+            <h2>リストを選択</h2>
+            <button id="createListBtn" class="primary-button">新規作成</button>
+          </div>
+          <div id="listsContainer" class="list-grid"></div>
+        </div>
+      </section>
+
+      <section id="viewListView" class="view">
+        <div class="card">
+          <div class="section-heading mobile-top-actions">
+            <div class="button-group compact-group action-buttons">
+              <button id="backToListsBtn" class="ghost-button action-button">一覧へ戻る</button>
+              <button id="createListFromViewBtn" class="ghost-button action-button">作成する</button>
+              <button id="editListBtn" class="primary-button action-button">編集する</button>
+            </div>
+            <div class="button-group compact-group action-buttons">
+                <button id="undoPurchaseBtn" class="ghost-button action-button" type="button">戻す</button>
+                <button id="redoPurchaseBtn" class="ghost-button action-button" type="button">やり直す</button>
+            </div>
+          </div>
+          <div class="section-heading compact-heading">
+            <h2 id="currentListTitle">リスト名</h2>
+            <span id="accessBadge" class="access-badge">編集可能</span>
+          </div>
+
+          <div class="toolbar">
+            <label class="filter-field">
+              場所
+              <select id="locationFilterSelect"></select>
+            </label>
+            <label class="filter-field checkbox-field">
+              <input id="onlyTodoCheckbox" type="checkbox" />
+              <span>未購入のみ表示</span>
+            </label>
+            <label class="filter-field">
+              並び替え
+              <select id="sortSelect">
+                <option value="position">位置順</option>
+                <option value="name">名前順</option>
+                <option value="priority">優先順位順</option>
+              </select>
+            </label>
+          </div>
+
+          <ul id="itemsList" class="item-list"></ul>
+        </div>
+      </section>
+
+      <section id="editListView" class="view">
+        <div class="card">
+          <div class="section-heading">
+            <button id="cancelEditBtn" class="ghost-button">閲覧に戻る</button>
+            <button id="saveListBtn" class="primary-button">保存して戻る</button>
+          </div>
+          <label class="full-width">
+            リスト名
+            <input id="listNameInput" type="text" />
+          </label>
+
+          <div class="card-subsection">
+            <h3>場所の候補</h3>
+            <div class="tag-list" id="locationTags"></div>
+            <div class="inline-form">
+              <input id="locationInput" type="text" placeholder="例: 北のスーパー" />
+              <button id="addLocationBtn" class="primary-button" type="button">追加</button>
+            </div>
+          </div>
+
+          <div id="editItemsContainer" class="edit-items"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="createListModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="createListModalTitle">
+      <div class="modal-card">
+        <h3 id="createListModalTitle">新しいリストを作成</h3>
+        <label class="full-width">
+          リスト名
+          <input id="newListNameInput" type="text" placeholder="例: 明日の買い物" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancelCreateListBtn" class="ghost-button">キャンセル</button>
+          <button type="button" id="confirmCreateListBtn" class="primary-button">作成</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="createItemModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="createItemModalTitle">
+      <div class="modal-card">
+        <h3 id="createItemModalTitle">新しいアイテムを追加</h3>
+        <label class="full-width">
+          品物名
+          <input id="newItemNameInput" type="text" placeholder="例: りんご" />
+        </label>
+        <label class="full-width">
+          価格
+          <input id="newItemPriceInput" type="text" placeholder="例: 180" />
+        </label>
+        <label class="full-width">
+          場所
+          <select id="newItemLocationInput"></select>
+        </label>
+        <label class="full-width">
+          位置
+          <input id="newItemPositionInput" type="text" maxlength="20" placeholder="例: A" />
+        </label>
+        <label class="full-width">
+          優先順位
+          <select id="newItemPriorityInput">
+            <option value="">未設定</option>
+            <option value="第一優先">第一優先</option>
+            <option value="第二優先">第二優先</option>
+            <option value="第三優先">第三優先</option>
+            <option value="第四優先">第四優先</option>
+            <option value="第五優先">第五優先</option>
+          </select>
+        </label>
+        <label class="full-width">
+          メモ
+          <textarea id="newItemMemoInput" rows="2" placeholder="メモを入力"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancelCreateItemBtn" class="ghost-button">キャンセル</button>
+          <button type="button" id="confirmCreateItemBtn" class="primary-button">追加</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
