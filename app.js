@@ -812,7 +812,7 @@ document.getElementById("passwordForm").addEventListener("submit", (event) => {
   }
 
   if (passwordInput.value === state.password) {
-    state.sessionRole = "viewer";
+    state.sessionRole = "owner";
     saveState();
     navigateTo("lists");
   } else {
