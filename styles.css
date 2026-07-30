@@ -150,6 +150,11 @@ select {
   color: var(--accent);
 }
 
+.danger-button {
+  background: #fdecea;
+  color: #c0392b;
+}
+
 .section-heading {
   display: flex;
   justify-content: space-between;

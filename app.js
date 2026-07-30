@@ -544,10 +544,19 @@ function renderPasswordView() {
 function renderListsView() {
   const container = document.getElementById("listsContainer");
   const createButton = document.getElementById("createListBtn");
+  const changePwBtn = document.getElementById("changePwBtn");
+  const deleteRoomBtn = document.getElementById("deleteRoomBtn");
   container.innerHTML = "";
 
+  const isOwner = state.sessionRole === "owner";
   if (createButton) {
     createButton.style.display = canCreateLists() ? "inline-block" : "none";
+  }
+  if (changePwBtn) {
+    changePwBtn.style.display = isOwner ? "inline-block" : "none";
+  }
+  if (deleteRoomBtn) {
+    deleteRoomBtn.style.display = isOwner ? "inline-block" : "none";
   }
 
   if (!state.lists.length) {
@@ -717,6 +726,10 @@ function updateUndoButton() {
 }
 
 function render() {
+  // force password screen when not authenticated
+  if (!state.sessionRole) {
+    state.view = "password";
+  }
   updateHeader();
   renderPasswordView();
   renderListsView();
@@ -1148,17 +1161,53 @@ document.getElementById("itemsList").addEventListener("click", (event) => {
 
 window.addEventListener("hashchange", handleHashChange);
 
+function openChangePwModal() {
+  const modal = document.getElementById("changePwModal");
+  document.getElementById("newPwInput").value = "";
+  document.getElementById("confirmNewPwInput").value = "";
+  modal.classList.remove("hidden");
+  document.getElementById("newPwInput").focus();
+}
+
+function closeChangePwModal() {
+  document.getElementById("changePwModal").classList.add("hidden");
+}
+
+function handleChangePw() {
+  const newPw = document.getElementById("newPwInput").value;
+  const confirmPw = document.getElementById("confirmNewPwInput").value;
+  if (!newPw || newPw !== confirmPw) {
+    alert("パスワードが一致しません。");
+    return;
+  }
+  state.password = newPw;
+  saveState();
+  closeChangePwModal();
+  alert("パスワードを変更しました。");
+}
+
+function handleDeleteRoom() {
+  if (!confirm("全てのリストを削除します。この操作は取り消せません。よろしいですか？")) return;
+  state.lists = [];
+  state.currentListId = null;
+  state.history = { undo: [], redo: [] };
+  state.undoState = null;
+  saveState();
+  render();
+}
+
+document.getElementById("changePwBtn").addEventListener("click", openChangePwModal);
+document.getElementById("deleteRoomBtn").addEventListener("click", handleDeleteRoom);
+document.getElementById("cancelChangePwBtn").addEventListener("click", closeChangePwModal);
+document.getElementById("confirmChangePwBtn").addEventListener("click", handleChangePw);
+
 async function initializeApp() {
   state = loadStateFromLocal();
-  // always start on password screen; session role is not persisted
+  // sessionRole is never persisted; always require password on page load
   state.sessionRole = null;
-  state.view = "password";
-  applyRoute(getRouteFromHash());
   render();
   await loadStateFromServer();
   state.sessionRole = null;
-  state.view = "password";
-  applyRoute(getRouteFromHash());
   render();
   updateUrl(true);
   window.setInterval(() => {

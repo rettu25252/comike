@@ -39,7 +39,11 @@
         <div class="card">
           <div class="section-heading">
             <h2>リストを選択</h2>
-            <button id="createListBtn" class="primary-button">新規作成</button>
+            <div class="button-group">
+              <button id="createListBtn" class="primary-button">新規作成</button>
+              <button id="changePwBtn" class="ghost-button" style="display:none">PWの変更</button>
+              <button id="deleteRoomBtn" class="ghost-button danger-button" style="display:none">部屋の削除</button>
+            </div>
           </div>
           <div id="listsContainer" class="list-grid"></div>
         </div>
@@ -162,6 +166,24 @@
         <div class="modal-actions">
           <button type="button" id="cancelCreateItemBtn" class="ghost-button">キャンセル</button>
           <button type="button" id="confirmCreateItemBtn" class="primary-button">追加</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="changePwModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="changePwModalTitle">
+      <div class="modal-card">
+        <h3 id="changePwModalTitle">パスワードの変更</h3>
+        <label class="full-width">
+          新しいパスワード
+          <input id="newPwInput" type="password" required />
+        </label>
+        <label class="full-width">
+          パスワード確認
+          <input id="confirmNewPwInput" type="password" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancelChangePwBtn" class="ghost-button">キャンセル</button>
+          <button type="button" id="confirmChangePwBtn" class="primary-button">変更する</button>
         </div>
       </div>
     </div>
