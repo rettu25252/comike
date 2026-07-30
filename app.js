@@ -15,25 +15,7 @@ const defaultState = {
     showOnlyTodo: false,
     sortBy: "position"
   },
-  lists: [
-    {
-      id: "list-1",
-      name: "明日の買い物",
-      items: [
-        { id: "item-1", name: "トマト", price: "200", memo: "赤いもの", purchaseStatus: "todo", purchased: false, location: "北のスーパー", position: "A" },
-        { id: "item-2", name: "にんじん", price: "120", memo: "1袋", purchaseStatus: "done", purchased: true, location: "コンビニ", position: "B" }
-      ],
-      locations: ["北のスーパー", "コンビニ"]
-    },
-    {
-      id: "list-2",
-      name: "今週までに買うもの",
-      items: [
-        { id: "item-3", name: "牛乳", price: "180", memo: "無脂肪", purchaseStatus: "todo", purchased: false, location: "コンビニ", position: "C" }
-      ],
-      locations: ["コンビニ"]
-    }
-  ],
+  lists: [],
   currentListId: null,
   view: "password"
 };
