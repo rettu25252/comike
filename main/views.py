@@ -174,6 +174,7 @@ def build_admin_page_content():
     """
 
 
+@csrf_exempt
 def admin_login(request):
     if request.method == "GET":
         nonce = generate_login_nonce()
@@ -207,6 +208,7 @@ def admin_login(request):
     return HttpResponse("Method not allowed", status=405, content_type="text/html; charset=utf-8")
 
 
+@csrf_exempt
 def admin_logout(request):
     response = HttpResponse(status=302)
     response["Location"] = "/admin/login"
@@ -214,6 +216,7 @@ def admin_logout(request):
     return response
 
 
+@csrf_exempt
 def admin_page(request):
     token = request.COOKIES.get("admin_session")
     if not token or not validate_session_token(token, SESSION_SECRET):
