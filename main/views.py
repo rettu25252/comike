@@ -1,4 +1,5 @@
 import base64
+import traceback
 import hashlib
 import hmac
 import json
@@ -11,6 +12,7 @@ from html import escape
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import admin
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -249,5 +251,21 @@ def admin_catalog_diagnostics(request):
                 "table": model._meta.db_table,
                 "error": repr(error),
             }
+
+    probe = {}
+    for key, model in models.items():
+        model_admin = admin.site._registry.get(model)
+        if model_admin is None:
+            probe[key] = {"error": "model admin not registered"}
+            continue
+        try:
+            response = model_admin.changelist_view(request)
+            probe[key] = {"status_code": response.status_code}
+        except Exception as error:
+            probe[key] = {
+                "error": repr(error),
+                "traceback": traceback.format_exc(),
+            }
+    result["changelist_probe"] = probe
 
     return JsonResponse(result)
