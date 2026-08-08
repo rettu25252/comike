@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
+    'main.auth_backends.OwnerBootstrapBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 

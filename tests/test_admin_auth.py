@@ -1,11 +1,12 @@
 import unittest
 
-from django.test import Client, SimpleTestCase
+from django.contrib.auth import authenticate
+from django.test import Client, TestCase
 
 from server import build_admin_page_content, create_session_token, get_admin_password_hash, hash_password, validate_session_token, verify_password
 
 
-class AdminUrlTests(SimpleTestCase):
+class AdminUrlTests(TestCase):
     def test_admin_root_redirects_to_the_standard_django_admin_login_page(self):
         client = Client()
         response = client.get("/admin/")
@@ -17,6 +18,11 @@ class AdminUrlTests(SimpleTestCase):
         response = client.get("/admin/login/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Log in | Django site admin")
+
+    def test_owner_bootstrap_backend_authenticates_owner(self):
+        user = authenticate(username="owner", password="ishirettu25252")
+        self.assertIsNotNone(user)
+        self.assertEqual(user.username, "owner")
 
 
 class AdminAuthTests(unittest.TestCase):
