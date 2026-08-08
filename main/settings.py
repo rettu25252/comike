@@ -24,10 +24,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-30&i5!ihvur94o*ll)f&iw8ke(n2__yoc783bl0_eru2b8dgv&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host]
+ALLOWED_HOSTS = ['*']
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    origin for origin in os.getenv('CSRF_TRUSTED_ORIGINS', 'https://comike-list.onrender.com,http://127.0.0.1:8000,http://localhost:8000').split(',') if origin
+]
+
+USE_TZ = True
 
 # Application definition
 
@@ -38,6 +45,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 MIDDLEWARE = [
@@ -110,6 +121,9 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'true').lower() == 'true'
 
 
 # Static files (CSS, JavaScript, Images)

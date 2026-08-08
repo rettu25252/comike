@@ -1,24 +1,22 @@
 import unittest
 
 from django.test import Client, SimpleTestCase
-from django.urls import resolve
 
-from main import urls as main_urls
-from main import views as main_views
 from server import build_admin_page_content, create_session_token, get_admin_password_hash, hash_password, validate_session_token, verify_password
 
 
 class AdminUrlTests(SimpleTestCase):
-    def test_admin_routes_resolve_with_trailing_slashes(self):
-        self.assertIn(resolve("/admin/", urlconf=main_urls).view_name, {"admin_page", "admin_page_slash"})
-        self.assertIn(resolve("/admin/login/", urlconf=main_urls).view_name, {"admin_login", "admin_login_slash"})
-        self.assertIn(resolve("/admin/logout/", urlconf=main_urls).view_name, {"admin_logout", "admin_logout_slash"})
-
-    def test_admin_login_post_is_not_blocked_by_csrf(self):
+    def test_admin_root_redirects_to_the_standard_django_admin_login_page(self):
         client = Client()
-        nonce = main_views.generate_login_nonce()
-        response = client.post("/admin/login", {"password": "wrong-password", "nonce": nonce})
-        self.assertEqual(response.status_code, 401)
+        response = client.get("/admin/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/admin/login/?next=/admin/")
+
+    def test_admin_login_page_is_available(self):
+        client = Client()
+        response = client.get("/admin/login/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Log in | Django site admin")
 
 
 class AdminAuthTests(unittest.TestCase):
