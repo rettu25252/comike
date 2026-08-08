@@ -41,7 +41,7 @@
               </label>
               <label>
                 管理者PW
-                <input id="createAdminPwInput" type="text" autocomplete="off" required />
+                <input id="createAdminPwInput" type="text" autocomplete="off" required pattern="[A-Za-z0-9]+" inputmode="latin" title="管理者PWは半角英数字のみ入力できます。" />
               </label>
               <button type="submit" class="primary-button">作成 / 管理者として入る</button>
             </form>

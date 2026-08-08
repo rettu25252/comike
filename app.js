@@ -948,6 +948,8 @@ function setPasswordTab(tab) {
 document.getElementById("tabCreateRoom").addEventListener("click", () => setPasswordTab("create"));
 document.getElementById("tabEnterRoom").addEventListener("click", () => setPasswordTab("enter"));
 
+const ADMIN_PASSWORD_PATTERN = /^[A-Za-z0-9]+$/;
+
 document.getElementById("createRoomForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const roomPw = document.getElementById("createPwInput").value;
@@ -955,6 +957,10 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
   const username = document.getElementById("createUserInput").value.trim();
   if (!roomPw || !adminPw || !username) {
     alert("部屋のPW、管理者PW、ユーザー名のすべてを入力してください。");
+    return;
+  }
+  if (!ADMIN_PASSWORD_PATTERN.test(adminPw)) {
+    alert("管理者PWは半角英数字のみ入力できます。");
     return;
   }
   // if room exists and admin PW matches, log in as admin without resetting
