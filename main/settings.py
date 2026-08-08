@@ -24,9 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-30&i5!ihvur94o*ll)f&iw8ke(n2__yoc783bl0_eru2b8dgv&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
-if os.getenv('FORCE_DEBUG_MODE', 'false').lower() == 'true':
-    DEBUG = True
+IS_RENDER = os.getenv('RENDER', '').lower() == 'true'
+debug_requested = os.getenv('DEBUG', 'False').lower() == 'true'
+force_debug_requested = os.getenv('FORCE_DEBUG_MODE', 'false').lower() == 'true'
+DEBUG = (debug_requested or force_debug_requested) and not IS_RENDER
 
 ALLOWED_HOSTS = ['*']
 
