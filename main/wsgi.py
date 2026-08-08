@@ -22,9 +22,9 @@ def bootstrap_admin_environment():
 	from django.contrib.auth import get_user_model
 	from django.core.management import call_command
 	from django.db import OperationalError
-	from main.state_sync import sync_catalog_from_db
 
 	django.setup()
+	from main.state_sync import sync_catalog_from_db
 
 	try:
 		call_command('migrate', interactive=False, verbosity=0)
