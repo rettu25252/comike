@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("admin/catalog-diagnostics", views.admin_catalog_diagnostics, name="admin_catalog_diagnostics"),
     path("api/state", views.api_state, name="api_state"),
     path("assets/<path:filename>", views.serve_asset, name="serve_asset"),
     path("styles.css", views.serve_asset, {"filename": "styles.css"}, name="styles"),

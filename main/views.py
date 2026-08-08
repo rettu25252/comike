@@ -14,6 +14,7 @@ from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from .models import AppUserRecord, ItemRecord, RoomRecord, ShoppingListRecord
 from .state_sync import ensure_catalog_tables, sync_catalog_from_db, sync_catalog_from_state
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -218,3 +219,35 @@ def serve_asset(request, filename):
         content_type = "application/octet-stream"
 
     return HttpResponse(asset_path.read_bytes(), content_type=content_type)
+
+
+def admin_catalog_diagnostics(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return JsonResponse({"error": "forbidden"}, status=403)
+
+    result = {}
+    try:
+        ensure_catalog_tables()
+        result["ensure_catalog_tables"] = "ok"
+    except Exception as error:
+        result["ensure_catalog_tables"] = f"error: {error!r}"
+
+    models = {
+        "users": AppUserRecord,
+        "rooms": RoomRecord,
+        "lists": ShoppingListRecord,
+        "items": ItemRecord,
+    }
+    for key, model in models.items():
+        try:
+            result[key] = {
+                "table": model._meta.db_table,
+                "count": model.objects.count(),
+            }
+        except Exception as error:
+            result[key] = {
+                "table": model._meta.db_table,
+                "error": repr(error),
+            }
+
+    return JsonResponse(result)
