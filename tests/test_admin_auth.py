@@ -1,6 +1,17 @@
 import unittest
 
+from django.test import SimpleTestCase
+from django.urls import resolve
+
+from main import urls as main_urls
 from server import build_admin_page_content, create_session_token, get_admin_password_hash, hash_password, validate_session_token, verify_password
+
+
+class AdminUrlTests(SimpleTestCase):
+    def test_admin_routes_resolve_with_trailing_slashes(self):
+        self.assertIn(resolve("/admin/", urlconf=main_urls).view_name, {"admin_page", "admin_page_slash"})
+        self.assertIn(resolve("/admin/login/", urlconf=main_urls).view_name, {"admin_login", "admin_login_slash"})
+        self.assertIn(resolve("/admin/logout/", urlconf=main_urls).view_name, {"admin_logout", "admin_logout_slash"})
 
 
 class AdminAuthTests(unittest.TestCase):
