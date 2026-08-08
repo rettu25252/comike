@@ -42,6 +42,7 @@ USE_TZ = True
 # Application definition
 
 INSTALLED_APPS = [
+    'main.apps.MainConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -128,6 +129,7 @@ USE_TZ = True
 
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'true').lower() == 'true'
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 
 # Static files (CSS, JavaScript, Images)
