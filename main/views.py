@@ -14,6 +14,8 @@ from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from .state_sync import sync_catalog_from_db, sync_catalog_from_state
+
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = settings.BASE_DIR / "shopping_list.db"
 STATE_LOCK = threading.Lock()
@@ -151,6 +153,11 @@ def api_state(request):
         return response
 
     if request.method == "GET":
+        try:
+            sync_catalog_from_db()
+        except Exception:
+            # Keep API available even if sync fails unexpectedly.
+            pass
         payload = load_state()
         response = JsonResponse(payload)
         response["Access-Control-Allow-Origin"] = "*"
@@ -180,6 +187,11 @@ def api_state(request):
         new_version = current_version + 1
         new_state = {"state": state_payload, "version": new_version}
         save_state(new_state)
+        try:
+            sync_catalog_from_state(state_payload)
+        except Exception:
+            # Keep API write path resilient even when admin sync fails.
+            pass
         response = JsonResponse(new_state)
         response["Access-Control-Allow-Origin"] = "*"
         return response
