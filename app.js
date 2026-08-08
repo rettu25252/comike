@@ -1,8 +1,10 @@
 const STORAGE_KEY = "shopping-list-app-v1";
+const PRESENCE_STORAGE_KEY = "shopping-list-presence-v1";
 
 const defaultState = {
   password: null,
   adminPassword: null,
+  username: "",
   editableListIds: [],
   undoState: null,
   serverVersion: 0,
@@ -20,12 +22,14 @@ const defaultState = {
   view: "password"
 };
 
-const PURCHASE_STATUSES = ["done", "todo", "partial"];
+const PURCHASE_STATUSES = ["todo", "buying", "done"];
 
 // sessionRole lives outside state so state replacements never reset it
 let sessionRole = null;
 let state = loadStateFromLocal();
 let syncInFlight = false;
+let presenceId = null;
+let presenceHeartbeatTimer = null;
 
 const PRIORITY_OPTIONS = [
   { value: "", label: "未設定" },
@@ -65,28 +69,30 @@ function normalizeState(rawState) {
   };
 }
 
+function normalizePurchaseStatus(rawStatus, purchased) {
+  if (rawStatus === "partial" || rawStatus === "buying") {
+    return "buying";
+  }
+  if (rawStatus === "done" || purchased) {
+    return "done";
+  }
+  return "todo";
+}
+
 function normalizeItem(item) {
   if (!item) {
-    return { id: `item-${Date.now()}`, name: "", price: "", memo: "", purchaseStatus: "todo", purchased: false, location: "", position: "", priority: "" };
+    return { id: `item-${Date.now()}`, name: "", price: "", memo: "", purchaseStatus: "todo", purchased: false, location: "", position: "", priority: "", updatedBy: "" };
   }
 
-  if (item.purchaseStatus && PURCHASE_STATUSES.includes(item.purchaseStatus)) {
-    return {
-      ...item,
-      purchased: item.purchaseStatus === "done",
-      location: item.location || "",
-      position: item.position || "",
-      priority: item.priority || ""
-    };
-  }
-
+  const normalizedStatus = normalizePurchaseStatus(item.purchaseStatus, Boolean(item.purchased));
   return {
     ...item,
-    purchaseStatus: item.purchased ? "done" : "todo",
-    purchased: Boolean(item.purchased),
+    purchaseStatus: normalizedStatus,
+    purchased: normalizedStatus === "done",
     location: item.location || "",
     position: item.position || "",
-    priority: item.priority || ""
+    priority: item.priority || "",
+    updatedBy: item.updatedBy || ""
   };
 }
 
@@ -117,23 +123,45 @@ function getItemPurchaseStatus(item) {
 }
 
 function getNextPurchaseStatus(status) {
-  const statusOrder = ["todo", "done", "partial"];
+  const statusOrder = PURCHASE_STATUSES;
   const currentIndex = statusOrder.indexOf(status);
   return statusOrder[(currentIndex + 1) % statusOrder.length];
 }
 
+function canApplyPurchaseStatus(list, item, status) {
+  if (status !== "buying" || !list || !item) {
+    return true;
+  }
+
+  return !list.items.some((entry) => entry.id !== item.id && getItemPurchaseStatus(entry) === "buying");
+}
+
 function applyPurchaseStatus(item, status, listId = null) {
+  if (!item) {
+    return false;
+  }
+
+  const list = state.lists.find((candidate) => candidate.id === listId) || getCurrentList();
+  if (!canApplyPurchaseStatus(list, item, status)) {
+    alert("すでに他のアイテムが購入中です。まずそのアイテムを処理してください。");
+    return false;
+  }
+
   const previousStatus = getItemPurchaseStatus(item);
   const previousPurchased = Boolean(item.purchased);
-  const changed = previousStatus !== status || previousPurchased !== (status === "done");
+  const previousUpdatedBy = item.updatedBy || "";
+  const nextUpdatedBy = (status === "buying" || status === "done") ? (state.username || "未設定") : "";
+  const changed = previousStatus !== status || previousPurchased !== (status === "done") || previousUpdatedBy !== nextUpdatedBy;
   if (changed) {
     const historyEntry = {
       listId: listId || state.currentListId,
       itemId: item.id,
       previousStatus,
       previousPurchased,
+      previousUpdatedBy,
       nextStatus: status,
-      nextPurchased: status === "done"
+      nextPurchased: status === "done",
+      nextUpdatedBy
     };
 
     state.history.undo.push(historyEntry);
@@ -146,8 +174,10 @@ function applyPurchaseStatus(item, status, listId = null) {
 
   item.purchaseStatus = status;
   item.purchased = status === "done";
+  item.updatedBy = nextUpdatedBy;
   saveState();
   render();
+  return true;
 }
 
 function restoreHistoryEntry(entry, target) {
@@ -164,9 +194,11 @@ function restoreHistoryEntry(entry, target) {
   if (target === "previous") {
     item.purchaseStatus = entry.previousStatus;
     item.purchased = Boolean(entry.previousPurchased);
+    item.updatedBy = entry.previousUpdatedBy || "";
   } else {
     item.purchaseStatus = entry.nextStatus;
     item.purchased = Boolean(entry.nextPurchased);
+    item.updatedBy = entry.nextUpdatedBy || "";
   }
 
   return true;
@@ -224,7 +256,7 @@ function startStatusHold(button, itemId) {
     const item = list?.items.find((entry) => entry.id === itemId);
     if (!item) return;
     button.dataset.longPressTriggered = "true";
-    applyPurchaseStatus(item, "partial", list?.id);
+    applyPurchaseStatus(item, "todo", list?.id);
   }, 2000);
   button.dataset.longPressTimer = String(timerId);
 }
@@ -232,13 +264,113 @@ function startStatusHold(button, itemId) {
 function getPurchaseLabel(status) {
   return {
     todo: "未購入",
-    partial: "一部購入済み",
+    buying: "購入中",
     done: "購入済み"
   }[status] || "未購入";
 }
 
 function getPurchaseClass(status) {
   return status || "todo";
+}
+
+function getPresenceId() {
+  if (presenceId) {
+    return presenceId;
+  }
+
+  const storedId = sessionStorage.getItem("shopping-list-presence-id");
+  presenceId = storedId || `presence-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  if (!storedId) {
+    sessionStorage.setItem("shopping-list-presence-id", presenceId);
+  }
+  return presenceId;
+}
+
+function getPresenceRegistry() {
+  try {
+    return JSON.parse(localStorage.getItem(PRESENCE_STORAGE_KEY) || "[]");
+  } catch (error) {
+    console.warn("Failed to read presence registry", error);
+    return [];
+  }
+}
+
+function writePresenceRegistry(entries) {
+  try {
+    localStorage.setItem(PRESENCE_STORAGE_KEY, JSON.stringify(entries));
+  } catch (error) {
+    console.warn("Failed to write presence registry", error);
+  }
+}
+
+function prunePresenceRegistry(entries) {
+  const now = Date.now();
+  return (entries || []).filter((entry) => entry?.id && now - Number(entry.lastSeen || 0) < 15000);
+}
+
+function getCurrentRoomKey() {
+  return state?.password || "";
+}
+
+function getViewerCountForRoom(roomKey) {
+  const entries = prunePresenceRegistry(getPresenceRegistry());
+  const activeRoom = roomKey || getCurrentRoomKey();
+  return entries.filter((entry) => entry?.roomKey === activeRoom).length;
+}
+
+function updateViewerCountDisplay() {
+  const countBadge = document.getElementById("viewerCountLabel");
+  if (!countBadge) {
+    return;
+  }
+  if (state.view === "password") {
+    countBadge.style.display = "none";
+    return;
+  }
+  countBadge.style.display = "inline-block";
+  const count = getViewerCountForRoom(getCurrentRoomKey());
+  countBadge.textContent = `閲覧者: ${count}`;
+}
+
+function registerPresence() {
+  const entries = prunePresenceRegistry(getPresenceRegistry());
+  const nextEntries = entries.filter((entry) => entry.id !== getPresenceId());
+  const roomKey = getCurrentRoomKey();
+  if (!roomKey) {
+    writePresenceRegistry(nextEntries);
+    updateViewerCountDisplay();
+    return;
+  }
+  nextEntries.push({
+    id: getPresenceId(),
+    roomKey,
+    username: state.username || "未設定",
+    lastSeen: Date.now()
+  });
+  writePresenceRegistry(nextEntries);
+  updateViewerCountDisplay();
+}
+
+function removePresence() {
+  const entries = prunePresenceRegistry(getPresenceRegistry()).filter((entry) => entry.id !== getPresenceId());
+  writePresenceRegistry(entries);
+  updateViewerCountDisplay();
+}
+
+function startPresenceTracking() {
+  if (presenceHeartbeatTimer) {
+    return;
+  }
+
+  registerPresence();
+  presenceHeartbeatTimer = window.setInterval(() => {
+    registerPresence();
+  }, 5000);
+  window.addEventListener("beforeunload", removePresence);
+  window.addEventListener("focus", registerPresence);
+  window.addEventListener("storage", () => {
+    updateViewerCountDisplay();
+  });
 }
 
 function getApiBaseUrl() {
@@ -569,9 +701,12 @@ function renderListsView() {
     const card = document.createElement("article");
     card.className = "list-card";
     card.dataset.listId = list.id;
+    const roomKey = list.roomPassword || state.password || "";
+    const viewerCount = getViewerCountForRoom(roomKey);
     card.innerHTML = `
       <h3>${escapeHtml(list.name)}</h3>
       <p class="hint-text">${escapeHtml(String(list.items.length))}件のアイテム</p>
+      <p class="hint-text">閲覧者: ${escapeHtml(String(viewerCount))}人</p>
     `;
     container.appendChild(card);
   });
@@ -614,7 +749,7 @@ function renderListView() {
 
   const filteredItems = list.items.filter((item) => {
     const matchesLocation = !state.filters.location || state.filters.location === "all" || item.location === state.filters.location;
-    const matchesTodo = !state.filters.showOnlyTodo || getItemPurchaseStatus(item) === "todo";
+    const matchesTodo = !state.filters.showOnlyTodo || getItemPurchaseStatus(item) !== "done";
     return matchesLocation && matchesTodo;
   });
 
@@ -636,6 +771,7 @@ function renderListView() {
   sortedItems.forEach((item) => {
     const row = document.createElement("li");
     const status = getItemPurchaseStatus(item);
+    const updaterLine = (status === "buying" || status === "done") && item.updatedBy ? `<div class="meta updater">更新者：${escapeHtml(item.updatedBy)}</div>` : "";
     row.className = `item-row ${status === "done" ? "purchased" : ""} ${getPriorityClass(item.priority)}`.trim();
     row.innerHTML = `
       <div class="status-row">
@@ -646,6 +782,7 @@ function renderListView() {
       <div class="meta">位置: ${escapeHtml(item.position || "未設定")}</div>
       <div class="meta">価格: ${escapeHtml(item.price || "未設定")}</div>
       <div class="meta">メモ: ${escapeHtml(item.memo || "なし")}</div>
+      ${updaterLine}
     `;
     itemsList.appendChild(row);
   });
@@ -683,6 +820,7 @@ function renderEditView() {
   list.items.forEach((item) => {
     const card = document.createElement("div");
     const status = getItemPurchaseStatus(item);
+    const updaterLine = (status === "buying" || status === "done") && item.updatedBy ? `<div class="meta updater">更新者：${escapeHtml(item.updatedBy)}</div>` : "";
     card.className = "edit-item";
     card.innerHTML = `
       <div class="edit-item-header">
@@ -696,6 +834,7 @@ function renderEditView() {
       <label>位置<input type="text" value="${escapeHtml(item.position || "")}" maxlength="20" data-item-id="${item.id}" data-field="position" placeholder="未設定" /></label>
       <label>優先順位<select data-item-id="${item.id}" data-field="priority">${PRIORITY_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}" ${item.priority === option.value ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}</select></label>
       <button type="button" class="status-toggle ${getPurchaseClass(status)}" data-action="toggle-status" data-item-id="${item.id}">${getPurchaseLabel(status)}</button>
+      ${updaterLine}
     `;
     container.appendChild(card);
   });
@@ -732,6 +871,7 @@ function render() {
     state.view = "password";
   }
   updateHeader();
+  updateViewerCountDisplay();
   renderPasswordView();
   renderListsView();
   renderListView();
@@ -749,7 +889,11 @@ function createList(name) {
   const list = {
     id: `list-${Date.now()}`,
     name,
-    items: []
+    items: [],
+    roomPassword: state.password || "",
+    adminPassword: state.adminPassword || "",
+    createdByUsername: state.username || "",
+    createdAt: new Date().toISOString()
   };
   state.lists.unshift(list);
   grantEditAccess(list.id);
@@ -808,12 +952,14 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
   event.preventDefault();
   const roomPw = document.getElementById("createPwInput").value;
   const adminPw = document.getElementById("createAdminPwInput").value;
-  if (!roomPw || !adminPw) {
-    alert("部屋のPWと管理者PWの両方を入力してください。");
+  const username = document.getElementById("createUserInput").value.trim();
+  if (!roomPw || !adminPw || !username) {
+    alert("部屋のPW、管理者PW、ユーザー名のすべてを入力してください。");
     return;
   }
   // if room exists and admin PW matches, log in as admin without resetting
   if (state.adminPassword && adminPw === state.adminPassword) {
+    state.username = username;
     sessionRole = "owner";
     saveState();
     navigateTo("lists");
@@ -826,6 +972,7 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
   }
   state.password = roomPw;
   state.adminPassword = adminPw;
+  state.username = username;
   sessionRole = "owner";
   saveState();
   navigateTo("lists");
@@ -834,11 +981,17 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
 document.getElementById("enterRoomForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const pw = document.getElementById("enterPwInput").value;
+  const username = document.getElementById("enterUserInput").value.trim();
   if (!state.password) {
     alert("まだ部屋が作られていません。「部屋を作る」から部屋を作成してください。");
     return;
   }
+  if (!username) {
+    alert("ユーザー名を入力してください。");
+    return;
+  }
   if (pw === state.password) {
+    state.username = username;
     sessionRole = "viewer";
     saveState();
     navigateTo("lists");
@@ -1067,9 +1220,9 @@ document.getElementById("editItemsContainer").addEventListener("click", (event) 
     return;
   }
 
+  clearStatusHold(target);
   if (target.dataset.longPressTriggered === "true") {
     target.dataset.longPressTriggered = "false";
-    clearStatusHold(target);
     return;
   }
 
@@ -1174,9 +1327,9 @@ document.getElementById("itemsList").addEventListener("touchcancel", (event) => 
 document.getElementById("itemsList").addEventListener("click", (event) => {
   const target = event.target.closest("[data-action='toggle-status']");
   if (!target) return;
+  clearStatusHold(target);
   if (target.dataset.longPressTriggered === "true") {
     target.dataset.longPressTriggered = "false";
-    clearStatusHold(target);
     return;
   }
   const list = getCurrentList();
@@ -1233,6 +1386,7 @@ async function initializeApp() {
   // sessionRole is a module-level variable; always start unauthenticated
   sessionRole = null;
   render();
+  startPresenceTracking();
   await loadStateFromServer();
   sessionRole = null;
   render();

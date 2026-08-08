@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理者ページ</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Yu Gothic UI", "Segoe UI", sans-serif;
+        --bg: #0f172a;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --accent: #2563eb;
+        --danger: #dc2626;
+        --border: #e2e8f0;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+        color: var(--text);
+      }
+      .shell {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+      }
+      h1, h2, p {
+        margin-top: 0;
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+      }
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+      label {
+        font-weight: 700;
+      }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        min-height: 44px;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 10px 14px;
+        cursor: pointer;
+        min-height: 44px;
+        font-weight: 700;
+      }
+      .primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .secondary {
+        background: #eff6ff;
+        color: var(--accent);
+      }
+      .danger {
+        background: #fee2e2;
+        color: var(--danger);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .message {
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #eff6ff;
+        color: var(--accent);
+      }
+      .message.error {
+        background: #fef2f2;
+        color: var(--danger);
+      }
+      .stats {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        margin-top: 16px;
+      }
+      .stat {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        background: #f8fafc;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card">
+        {{ADMIN_CONTENT}}
+      </section>
+    </main>
+  </body>
+</html>

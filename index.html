@@ -14,7 +14,10 @@
           <h1 id="pageTitle">買い物リスト</h1>
           <p id="pageSubtitle">個人的に作成したリストアップサイトです。</p>
         </div>
-        <button id="logoutBtn" class="ghost-button">ログアウト</button>
+        <div class="header-actions">
+          <span id="viewerCountLabel" class="viewer-count-badge">閲覧者: 0</span>
+          <button id="logoutBtn" class="ghost-button">ログアウト</button>
+        </div>
       </header>
 
       <section id="passwordView" class="view active">
@@ -33,6 +36,10 @@
                 <input id="createPwInput" type="text" autocomplete="off" required />
               </label>
               <label>
+                ユーザー名
+                <input id="createUserInput" type="text" autocomplete="username" required />
+              </label>
+              <label>
                 管理者PW
                 <input id="createAdminPwInput" type="text" autocomplete="off" required />
               </label>
@@ -46,6 +53,10 @@
               <label>
                 部屋のPW
                 <input id="enterPwInput" type="text" autocomplete="off" required />
+              </label>
+              <label>
+                ユーザー名
+                <input id="enterUserInput" type="text" autocomplete="username" required />
               </label>
               <button type="submit" class="primary-button">入る</button>
             </form>
@@ -92,7 +103,7 @@
             </label>
             <label class="filter-field checkbox-field">
               <input id="onlyTodoCheckbox" type="checkbox" />
-              <span>未購入のみ表示</span>
+              <span>購入していないものを表示</span>
             </label>
             <label class="filter-field">
               並び替え
