@@ -29,8 +29,8 @@ def bootstrap_admin_environment():
 	try:
 		call_command('migrate', interactive=False, verbosity=0)
 	except OperationalError:
-		# Another worker may be applying migrations at the same time.
-		return
+		# Continue with best-effort table self-healing.
+		pass
 
 	username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'owner')
 	password = (

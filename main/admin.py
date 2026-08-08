@@ -1,17 +1,24 @@
 from django.contrib import admin
 
 from .models import AppUserRecord, ItemRecord, RoomRecord, ShoppingListRecord
+from .state_sync import ensure_catalog_tables
+
+
+class SelfHealingAdminMixin:
+    def get_queryset(self, request):
+        ensure_catalog_tables()
+        return super().get_queryset(request)
 
 
 @admin.register(AppUserRecord)
-class AppUserRecordAdmin(admin.ModelAdmin):
+class AppUserRecordAdmin(SelfHealingAdminMixin, admin.ModelAdmin):
     list_display = ("username", "created_at")
     search_fields = ("username",)
     ordering = ("username",)
 
 
 @admin.register(RoomRecord)
-class RoomRecordAdmin(admin.ModelAdmin):
+class RoomRecordAdmin(SelfHealingAdminMixin, admin.ModelAdmin):
     list_display = ("room_password", "admin_password", "created_by", "created_at")
     search_fields = ("room_password", "admin_password", "created_by__username")
     list_filter = ("created_at",)
@@ -19,7 +26,7 @@ class RoomRecordAdmin(admin.ModelAdmin):
 
 
 @admin.register(ShoppingListRecord)
-class ShoppingListRecordAdmin(admin.ModelAdmin):
+class ShoppingListRecordAdmin(SelfHealingAdminMixin, admin.ModelAdmin):
     list_display = ("name", "source_list_id", "room", "created_by", "created_at")
     search_fields = ("name", "source_list_id", "room__room_password", "created_by__username")
     list_filter = ("created_at",)
@@ -27,7 +34,7 @@ class ShoppingListRecordAdmin(admin.ModelAdmin):
 
 
 @admin.register(ItemRecord)
-class ItemRecordAdmin(admin.ModelAdmin):
+class ItemRecordAdmin(SelfHealingAdminMixin, admin.ModelAdmin):
     list_display = (
         "name",
         "shopping_list",
