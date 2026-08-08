@@ -2,11 +2,23 @@ import json
 import sqlite3
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 
 from .models import AppUserRecord, ItemRecord, RoomRecord, ShoppingListRecord
+
+
+def ensure_catalog_tables():
+    models = [AppUserRecord, RoomRecord, ShoppingListRecord, ItemRecord]
+    existing = set(connection.introspection.table_names())
+    with connection.schema_editor() as editor:
+        for model in models:
+            table_name = model._meta.db_table
+            if table_name in existing:
+                continue
+            editor.create_model(model)
+            existing.add(table_name)
 
 
 def _parse_created_at(value):
@@ -35,6 +47,7 @@ def _username(value):
 
 
 def sync_catalog_from_state(state):
+    ensure_catalog_tables()
     state = state or {}
     lists = state.get("lists") or []
     users = set()

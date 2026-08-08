@@ -14,7 +14,7 @@ from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .state_sync import sync_catalog_from_db, sync_catalog_from_state
+from .state_sync import ensure_catalog_tables, sync_catalog_from_db, sync_catalog_from_state
 
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = settings.BASE_DIR / "shopping_list.db"
@@ -154,6 +154,7 @@ def api_state(request):
 
     if request.method == "GET":
         try:
+            ensure_catalog_tables()
             sync_catalog_from_db()
         except Exception:
             # Keep API available even if sync fails unexpectedly.
@@ -188,6 +189,7 @@ def api_state(request):
         new_state = {"state": state_payload, "version": new_version}
         save_state(new_state)
         try:
+            ensure_catalog_tables()
             sync_catalog_from_state(state_payload)
         except Exception:
             # Keep API write path resilient even when admin sync fails.

@@ -24,7 +24,7 @@ def bootstrap_admin_environment():
 	from django.db import OperationalError
 
 	django.setup()
-	from main.state_sync import sync_catalog_from_db
+	from main.state_sync import ensure_catalog_tables, sync_catalog_from_db
 
 	try:
 		call_command('migrate', interactive=False, verbosity=0)
@@ -64,6 +64,7 @@ def bootstrap_admin_environment():
 		user.save()
 
 	try:
+		ensure_catalog_tables()
 		sync_catalog_from_db()
 	except Exception:
 		# Keep startup alive even if sync fails.
