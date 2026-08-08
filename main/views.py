@@ -260,6 +260,7 @@ def admin_catalog_diagnostics(request):
             continue
         try:
             response = model_admin.changelist_view(request)
+            response.render()
             probe[key] = {"status_code": response.status_code}
         except Exception as error:
             probe[key] = {
