@@ -948,6 +948,7 @@ function setPasswordTab(tab) {
 document.getElementById("tabCreateRoom").addEventListener("click", () => setPasswordTab("create"));
 document.getElementById("tabEnterRoom").addEventListener("click", () => setPasswordTab("enter"));
 
+const ROOM_PASSWORD_PATTERN = /^[A-Za-z0-9]+$/;
 const ADMIN_PASSWORD_PATTERN = /^[A-Za-z0-9]+$/;
 
 document.getElementById("createRoomForm").addEventListener("submit", (event) => {
@@ -957,6 +958,10 @@ document.getElementById("createRoomForm").addEventListener("submit", (event) => 
   const username = document.getElementById("createUserInput").value.trim();
   if (!roomPw || !adminPw || !username) {
     alert("部屋のPW、管理者PW、ユーザー名のすべてを入力してください。");
+    return;
+  }
+  if (!ROOM_PASSWORD_PATTERN.test(roomPw)) {
+    alert("部屋のPWは半角英数字のみ入力できます。");
     return;
   }
   if (!ADMIN_PASSWORD_PATTERN.test(adminPw)) {
@@ -988,6 +993,10 @@ document.getElementById("enterRoomForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const pw = document.getElementById("enterPwInput").value;
   const username = document.getElementById("enterUserInput").value.trim();
+  if (!ROOM_PASSWORD_PATTERN.test(pw)) {
+    alert("部屋のPWは半角英数字のみ入力できます。");
+    return;
+  }
   if (!state.password) {
     alert("まだ部屋が作られていません。「部屋を作る」から部屋を作成してください。");
     return;

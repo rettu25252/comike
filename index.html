@@ -33,7 +33,7 @@
             <form id="createRoomForm" class="stacked-form">
               <label>
                 部屋のPW（視聴者用）
-                <input id="createPwInput" type="text" autocomplete="off" required />
+                <input id="createPwInput" type="text" autocomplete="off" required pattern="[A-Za-z0-9]+" inputmode="latin" title="部屋のPWは半角英数字のみ入力できます。" />
               </label>
               <label>
                 ユーザー名
@@ -52,7 +52,7 @@
             <form id="enterRoomForm" class="stacked-form">
               <label>
                 部屋のPW
-                <input id="enterPwInput" type="text" autocomplete="off" required />
+                <input id="enterPwInput" type="text" autocomplete="off" required pattern="[A-Za-z0-9]+" inputmode="latin" title="部屋のPWは半角英数字のみ入力できます。" />
               </label>
               <label>
                 ユーザー名
