@@ -1,10 +1,11 @@
-from django.contrib import admin
 from django.urls import path
 
 from . import views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("admin/login", views.admin_login, name="admin_login"),
+    path("admin/logout", views.admin_logout, name="admin_logout"),
+    path("admin", views.admin_page, name="admin_page"),
     path("api/state", views.api_state, name="api_state"),
     path("assets/<path:filename>", views.serve_asset, name="serve_asset"),
     path("styles.css", views.serve_asset, {"filename": "styles.css"}, name="styles"),
