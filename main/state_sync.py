@@ -12,13 +12,41 @@ from .models import AppUserRecord, ItemRecord, RoomRecord, ShoppingListRecord
 def ensure_catalog_tables():
     models = [AppUserRecord, RoomRecord, ShoppingListRecord, ItemRecord]
     existing = set(connection.introspection.table_names())
+
+    def model_columns(model):
+        return {
+            field.column
+            for field in model._meta.local_concrete_fields
+            if field.column
+        }
+
+    def table_columns(table_name):
+        with connection.cursor() as cursor:
+            description = connection.introspection.get_table_description(cursor, table_name)
+        return {col.name for col in description}
+
+    should_rebuild = False
+    for model in models:
+        table_name = model._meta.db_table
+        if table_name not in existing:
+            should_rebuild = True
+            break
+        if not model_columns(model).issubset(table_columns(table_name)):
+            should_rebuild = True
+            break
+
+    if not should_rebuild:
+        return
+
     with connection.schema_editor() as editor:
-        for model in models:
+        for model in [ItemRecord, ShoppingListRecord, RoomRecord, AppUserRecord]:
             table_name = model._meta.db_table
             if table_name in existing:
-                continue
+                editor.delete_model(model)
+                existing.remove(table_name)
+        for model in models:
             editor.create_model(model)
-            existing.add(table_name)
+            existing.add(model._meta.db_table)
 
 
 def _parse_created_at(value):
